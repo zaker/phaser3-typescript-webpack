@@ -1,48 +1,48 @@
 import { CrateboxScene } from 'cratebox/cratebox.scene';
-import { GunConfig, guns } from 'cratebox/guns';
+import { Gun, GunFactory } from 'cratebox/sprites/guns';
 
 export class Player extends Phaser.GameObjects.Sprite {
   body: Phaser.Physics.Arcade.Body;
   scene: CrateboxScene;
 
+  // input keys
   keys: { [key: string]: Phaser.Input.Keyboard.Key };
-  gun = guns[0];
-  gunSprite: Phaser.GameObjects.Sprite;
-  gunBody: Phaser.Physics.Arcade.Body;
+  inputs: { [key: string]: boolean };
+
+  gun: Gun;
 
   // factors
   runSpeed = 100;
+  knockback = 0;
 
   // timers
   jumpTimer = 0;
   shootTimer = 0;
+  walkSfxTimer = 0;
 
   // states
   isShooting = false;
   isJumping = false;
   isFalling = false;
 
-  // groups
-  projectiles: Phaser.GameObjects.Group;
-
   constructor(scene, x, y, key, layer) {
     super(scene, x, y, key);
     this.keys = this.scene.keys;
-    this.gun = guns[0];
-    this.gunSprite = this.scene.add.sprite(this.x, this.y, this.gun.key);
-    this.shootTimer = this.gun.cooldown; // allow player to shoot immediately
     this.scene.physics.world.enable(this);
-    this.scene.physics.world.enable(this.gunSprite);
-    this.gunBody = this.gunSprite.body as any;
-    this.gunBody.setSize(10, 10).allowGravity = false;
-
-    this.scene.physics.add.collider(this as any, layer);
+    this.scene.physics.add.collider(this, layer);
     this.body.setSize(11, 16).setCollideWorldBounds(false);
     this.setDepth(10);
-    this.projectiles = this.scene.projectileGroup;
+    this.resetGun(x, y);
   }
 
   update(time: number, delta: number): void {
+
+    this.inputs = {
+      left: this.keys.left.isDown || this.scene.touchControls.left,
+      right: this.keys.right.isDown || this.scene.touchControls.right,
+      jump: this.keys.up.isDown || this.keys.space.isDown || this.scene.touchControls.up,
+      shoot: this.keys.down.isDown || this.keys.X.isDown || this.scene.touchControls.shoot
+    };
     if (this.y > 400) {
       this.scene.restart();
       return;
@@ -55,45 +55,71 @@ export class Player extends Phaser.GameObjects.Sprite {
     this.isFalling = this.body.velocity.y > 50;
 
     this.updateGun(time, delta);
-    this.controls(time, delta);
-    this.animation(time, delta);
+    this.animation();
+    this.controls(delta);
 
     this.shootTimer += delta;
+    this.walkSfxTimer += delta;
+  }
 
+  resetGun(x, y): void {
+    if (this.gun) {
+      this.gun.preDestroy();
+      this.gun.destroy();
+    }
+    this.gun = GunFactory.createDefaultGun(this.scene, x + 8, y);
+    this.scene.physics.world.enable(this);
+    this.scene.add.existing(this.gun);
   }
 
   updateGun(time, delta): void {
-    this.gunSprite.x = this.flipX ? this.x - 8 : this.x + 8;
-    this.gunSprite.y = this.y;
-    this.gunSprite.flipX = this.flipX;
-    if (this.gunSprite.flipX) {
-      this.gunSprite.setDepth(11);
-    } else {
-      this.gunSprite.setDepth(9);
-    }
-    if (this.shootTimer > this.gun.cooldown / 2) {
-      this.gunBody.setAngularVelocity(0);
-      this.gunSprite.setAngle(0);
-    }
+    this.gun.update(time, delta);
   }
 
-  controls(time: number, delta: number): void {
-    if (this.keys.X.isDown) {
-      if (this.shootTimer > this.gun.cooldown) {
-        this.shoot();
+  changeGun(): void {
+    this.gun.destroy();
+    this.gun = GunFactory.createRandomGun(this.scene, this.x, this.y);
+    this.scene.add.existing(this.gun);
+    this.scene.flashGunName(this.gun.id);
+  }
+
+  nextGun(): void {
+    this.gun.destroy();
+    this.gun = GunFactory.getNextGun(this.scene, this.x, this.y, this.gun);
+    this.scene.add.existing(this.gun);
+    this.scene.flashGunName(this.gun.id);
+  }
+
+  controls(delta: number): void {
+    if (this.inputs.shoot) {
+      if (this.gun.shootTimer > this.gun.cooldown) {
+        this.knockback = this.shoot();
+        if (!this.knockback) {
+          this.knockback = 0;
+        }
       }
-    }
-    if (this.keys.left.isDown && !this.keys.right.isDown) {
-      this.body.setVelocityX(-this.runSpeed);
-      this.flipX = true;
-    } else if (this.keys.right.isDown && !this.keys.left.isDown) {
-      this.body.setVelocityX(this.runSpeed);
-      this.flipX = false;
     } else {
-      this.body.setVelocityX(0);
+      this.gun.unShoot();
+      this.knockback = 0;
     }
 
-    if (this.keys.up.isDown || this.keys.space.isDown) {
+    if (this.inputs.left && !this.inputs.right) {
+      this.body.setVelocityX(-this.runSpeed + this.knockback);
+      if (this.walkSfxTimer > 150 && this.body.onFloor()) {
+        this.walkSfx();
+      }
+      this.flipX = true;
+    } else if (this.inputs.right && !this.inputs.left) {
+      this.body.setVelocityX(this.runSpeed + this.knockback);
+      if (this.walkSfxTimer > 150 && this.body.onFloor()) {
+        this.walkSfx();
+      }
+      this.flipX = false;
+    } else {
+      this.body.setVelocityX(this.knockback);
+    }
+
+    if (this.inputs.jump) {
       if (this.body.onFloor() && this.jumpTimer === 0) {
         this.jumpTimer = 1;
         this.body.setVelocityY(-150);
@@ -108,39 +134,51 @@ export class Player extends Phaser.GameObjects.Sprite {
     } else {
       this.jumpTimer = 0;
     }
+
   }
 
-  animation(time: number, delta: number): void {
-    let anim: string;
+  jump(): void {
+    if (this.body.onFloor() && this.jumpTimer === 0) {
+      this.jumpTimer = 1;
+      this.body.setVelocityY(-150);
+    }
+  }
 
+  animation(): void {
+    let anim: string;
     if (this.body.velocity.y !== 0) {
       anim = 'jump';
     } else if (this.isShooting) {
       anim = 'shoot';
-    } else if (this.body.velocity.x !== 0) {
+    } else if (this.body.velocity.x !== 0 && (this.inputs.left || this.inputs.right)) {
       anim = 'run';
     } else {
       anim = 'stand';
     }
-
     if (this.anims.getCurrentKey() !== anim) {
       this.anims.play(anim);
     }
-
   }
 
-  shoot(): void {
-    this.scene.events.emit('sfx', 'shoot');
+  shoot(): number {
+    // this.scene.tweens.add({
+    //   targets: this,
+    //   duration: 20,
+    //   displayOriginX: this.flipX ? this.displayOriginX - 1 : this.displayOriginX + 1,
+    //   yoyo: true,
+    //   onComplete: () => {
+    //     this.setScale(1, 1);
+    //     this.setDisplayOrigin(0, 0);
+    //   }
+    // });
+    return this.gun.shoot();
+  }
 
-    const newProjectile = this.projectiles.create(this.gunSprite.x, this.gunSprite.y, this.gun.projectile.key);
-    const newProjectileBody: Phaser.Physics.Arcade.Body = newProjectile.body as any;
-    newProjectileBody
-      .setVelocityX(this.flipX ? -this.gun.projectile.velocity : this.gun.projectile.velocity)
-      .setSize(this.gun.projectile.size, this.gun.projectile.size)
-      .allowGravity = this.gun.projectile.gravity;
-    // this.gunSprite.setAngle(this.gunSprite.flipX ? this.gun.recoilAmount : -this.gun.recoilAmount);
-    this.gunBody.setAngularVelocity(this.gunSprite.flipX ? this.gun.recoilAmount : -this.gun.recoilAmount);
-    this.shootTimer = 0;
+  walkSfx(): void {
+    if (this.body.onFloor()) {
+      this.scene.events.emit('sfx', 'walk');
+      this.walkSfxTimer = 0;
+    }
   }
 
 }

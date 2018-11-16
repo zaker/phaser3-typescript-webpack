@@ -14,10 +14,11 @@ export class Scene extends Phaser.Scene {
   anims: Phaser.Animations.AnimationManager;
 
   events: Phaser.Events.EventEmitter;
+  time: Phaser.Time.Clock;
 
-  constructor(config: Opt<SettingsConfig>) {
-    super(config as any);
-  }
+  // constructor(config: Opt<SettingsConfig>) {
+  //   super(config as any);
+  // }
 
   update(time: number, delta?: number): void { /* */ }
 

@@ -1955,9 +1955,9 @@ eventemitter3@1.x.x:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-1.2.0.tgz#1c86991d816ad1e504750e73874224ecf3bec508"
 
-eventemitter3@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.0.1.tgz#4ce66c3fc5b5a6b9f2245e359e1938f1ab10f960"
+eventemitter3@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.1.0.tgz#090b4d6cdbd645ed10bf750d4b5407942d7ba163"
 
 events@^1.0.0:
   version "1.1.1"
@@ -3605,7 +3605,7 @@ mime@1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/mime/-/mime-1.4.1.tgz#121f9ebc49e3766f311a76e1fa1c8003c4b03aa6"
 
-mime@^2.1.0:
+mime@^2.0.3, mime@^2.1.0:
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/mime/-/mime-2.2.2.tgz#6b4c109d88031d7b5c23635f5b923da336d79121"
 
@@ -4200,11 +4200,11 @@ performance-now@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-0.2.0.tgz#33ef30c5c77d4ea21c5a53869d91b56d8f2555e5"
 
-phaser@^3.3.0:
-  version "3.3.0"
-  resolved "https://registry.yarnpkg.com/phaser/-/phaser-3.3.0.tgz#9b9132fb973f280cce38c842db173569c6c05af1"
+phaser@^3.8.0:
+  version "3.8.0"
+  resolved "https://registry.yarnpkg.com/phaser/-/phaser-3.8.0.tgz#e5ff59cc0b7a1cabb8d32b61d89c3ffe58f869fc"
   dependencies:
-    eventemitter3 "^3.0.1"
+    eventemitter3 "^3.1.0"
 
 pify@^2.0.0, pify@^2.3.0:
   version "2.3.0"
@@ -4765,7 +4765,7 @@ safe-regex@^1.1.0:
   dependencies:
     ret "~0.1.10"
 
-schema-utils@^0.4.2, schema-utils@^0.4.5:
+schema-utils@^0.4.2, schema-utils@^0.4.3, schema-utils@^0.4.5:
   version "0.4.5"
   resolved "https://registry.yarnpkg.com/schema-utils/-/schema-utils-0.4.5.tgz#21836f0608aac17b78f9e3e24daff14a5ca13a3e"
   dependencies:
@@ -5533,6 +5533,14 @@ urix@^0.1.0:
 url-join@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/url-join/-/url-join-4.0.0.tgz#4d3340e807d3773bda9991f8305acdcc2a665d2a"
+
+url-loader@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/url-loader/-/url-loader-1.0.1.tgz#61bc53f1f184d7343da2728a1289ef8722ea45ee"
+  dependencies:
+    loader-utils "^1.1.0"
+    mime "^2.0.3"
+    schema-utils "^0.4.3"
 
 url-parse-lax@^1.0.0:
   version "1.0.0"
